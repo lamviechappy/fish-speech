@@ -37,51 +37,70 @@ def parse_args():
     parser.add_argument("--compile", action="store_true")
     parser.add_argument("--max-gradio-length", type=int, default=0)
     parser.add_argument("--theme", type=str, default="light")
+    parser.add_argument(
+        "--backend",
+        type=str,
+        choices=["pytorch", "mlx"],
+        default="mlx",
+        help="Backend to use for inference (default: mlx)",
+    )
 
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    args.precision = torch.half if args.half else torch.bfloat16
 
-    # Check if MPS or CUDA is available
-    if torch.backends.mps.is_available():
-        args.device = "mps"
-        logger.info("mps is available, running on mps.")
-    elif torch.xpu.is_available():
-        args.device = "xpu"
-        logger.info("XPU is available, running on XPU.")
-    elif not torch.cuda.is_available():
-        logger.info("CUDA is not available, running on CPU.")
-        args.device = "cpu"
+    if args.backend == "mlx":
+        logger.info("Using MLX backend for inference.")
+        from fish_speech.inference_engine.mlx_engine import MLXTTSInferenceEngine
 
-    logger.info("Loading Llama model...")
-    llama_queue = launch_thread_safe_queue(
-        checkpoint_path=args.llama_checkpoint_path,
-        device=args.device,
-        precision=args.precision,
-        compile=args.compile,
-    )
+        inference_engine = MLXTTSInferenceEngine(
+            llama_checkpoint_path=str(args.llama_checkpoint_path),
+            compile=args.compile,
+        )
+    else:
+        logger.info("Using PyTorch backend for inference.")
+        args.precision = torch.half if args.half else torch.bfloat16
 
-    logger.info("Loading VQ-GAN model...")
-    decoder_model = load_decoder_model(
-        config_name=args.decoder_config_name,
-        checkpoint_path=args.decoder_checkpoint_path,
-        device=args.device,
-    )
+        # Check if MPS or CUDA is available
+        if torch.backends.mps.is_available():
+            args.device = "mps"
+            logger.info("mps is available, running on mps.")
+        elif torch.xpu.is_available():
+            args.device = "xpu"
+            logger.info("XPU is available, running on XPU.")
+        elif not torch.cuda.is_available():
+            logger.info("CUDA is not available, running on CPU.")
+            args.device = "cpu"
 
-    logger.info("Decoder model loaded, warming up...")
+        logger.info("Loading Llama model...")
+        llama_queue = launch_thread_safe_queue(
+            checkpoint_path=args.llama_checkpoint_path,
+            device=args.device,
+            precision=args.precision,
+            compile=args.compile,
+        )
 
-    # Create the inference engine
-    inference_engine = TTSInferenceEngine(
-        llama_queue=llama_queue,
-        decoder_model=decoder_model,
-        compile=args.compile,
-        precision=args.precision,
-    )
+        logger.info("Loading VQ-GAN model...")
+        decoder_model = load_decoder_model(
+            config_name=args.decoder_config_name,
+            checkpoint_path=args.decoder_checkpoint_path,
+            device=args.device,
+        )
+
+        logger.info("Decoder model loaded, warming up...")
+
+        # Create the inference engine
+        inference_engine = TTSInferenceEngine(
+            llama_queue=llama_queue,
+            decoder_model=decoder_model,
+            compile=args.compile,
+            precision=args.precision,
+        )
 
     # Dry run to check if the model is loaded correctly and avoid the first-time latency
+    logger.info("Warming up model...")
     list(
         inference_engine.inference(
             ServeTTSRequest(

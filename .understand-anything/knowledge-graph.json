@@ -1,0 +1,1569 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "fish-speech",
+    "languages": [
+      "Python"
+    ],
+    "frameworks": [
+      "PyTorch",
+      "Lightning",
+      "Gradio",
+      "Transformers",
+      "TorchAudio"
+    ],
+    "description": "Fish Speech - State-of-the-art multilingual text-to-speech (TTS) system",
+    "analyzedAt": "2026-03-25T08:12:26.860013Z",
+    "gitCommitHash": "0def6f38e375dad95a49a8dc8e31674ccb230239"
+  },
+  "nodes": [
+    {
+      "id": "fish_speech/train.py",
+      "name": "train.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Main training entry point using Hydra configuration and PyTorch Lightning. Orchestrates model training with configurable datamodules, callbacks, loggers, and checkpoint management. Supports auto-resume from latest checkpoint and weights-only loading.",
+      "filePath": "fish_speech/train.py",
+      "exports": [
+        "train",
+        "main"
+      ],
+      "frameworks": [
+        "pytorch",
+        "lightning",
+        "hydra"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/conversation.py",
+      "name": "conversation.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Defines conversation structure with Message and Conversation classes for multi-turn dialogue. Handles role-based messages (system/user/assistant) with multimodal parts, loss calculation flags, and special tokens (im_start/im_end). Converts conversations to ContentSequence for encoding.",
+      "filePath": "fish_speech/conversation.py",
+      "exports": [
+        "Message",
+        "Conversation"
+      ],
+      "frameworks": [
+        "pytorch",
+        "transformers"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/content_sequence.py",
+      "name": "content_sequence.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Core multimodal sequence representation supporting interleaved text, VQ codes, and audio. Implements encoding logic for training (with shift) and inference, including vectorized token mapping, loss masking, and speaker tokens. Provides visualization with color-coded loss regions.",
+      "filePath": "fish_speech/content_sequence.py",
+      "exports": [
+        "BasePart",
+        "VQPart",
+        "TextPart",
+        "AudioPart",
+        "EncodedMessage",
+        "ContentSequence",
+        "restore_ndarray"
+      ],
+      "frameworks": [
+        "pytorch",
+        "numpy"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "fish_speech/tokenizer.py",
+      "name": "tokenizer.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Wrapper around HuggingFace tokenizer with Fish Audio-specific tokens. Manages semantic tokens (4096 range), modality tokens (text/voice/interleave), audio tokens, and special tokens. Builds semantic_id_to_token_id mapping and handles Qwen/Tiktoken special token parsing.",
+      "filePath": "fish_speech/tokenizer.py",
+      "exports": [
+        "FishTokenizer",
+        "EOS_TOKEN",
+        "PAD_TOKEN",
+        "IM_START_TOKEN",
+        "IM_END_TOKEN",
+        "PHONEME_START_TOKEN",
+        "PHONEME_END_TOKEN",
+        "MODALITY_TEXT_TOKEN",
+        "MODALITY_VOICE_TOKEN",
+        "MODALITY_INTERLEAVE_TOKEN",
+        "AUDIO_START_TOKEN",
+        "AUDIO_END_TOKEN",
+        "AUDIO_EMBED_TOKEN",
+        "MODALITY_TOKENS",
+        "SEMANTIC_TOKEN_TEMPLATE",
+        "SEMANTIC_TOKENS",
+        "ALL_SPECIAL_TOKENS"
+      ],
+      "frameworks": [
+        "transformers",
+        "pytorch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/scheduler.py",
+      "name": "scheduler.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Learning rate scheduler functions for training. Implements cosine schedule with warmup (with configurable cycles and final LR ratio) and constant schedule with warmup. Supports both absolute and relative (0-1) warmup step specification.",
+      "filePath": "fish_speech/scheduler.py",
+      "exports": [
+        "get_cosine_schedule_with_warmup_lr_lambda",
+        "get_constant_schedule_with_warmup_lr_lambda"
+      ],
+      "frameworks": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "tools/api_server.py",
+      "name": "api_server.py",
+      "type": "file",
+      "tags": [
+        "api",
+        "server",
+        "rest",
+        "uvicorn",
+        "authentication",
+        "cors"
+      ],
+      "summary": "FastAPI/Kui-based REST API server for Fish Speech TTS. Provides HTTP endpoints for text-to-speech synthesis with authentication, CORS support, and multi-worker deployment via Uvicorn. Initializes ModelManager on startup and handles request routing.",
+      "filePath": "tools/api_server.py",
+      "metadata": {
+        "lines": 146,
+        "primary_framework": "Kui/ASGI",
+        "key_classes": [
+          "API",
+          "ExceptionHandler"
+        ],
+        "entry_point": true,
+        "server_type": "REST API"
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/run_webui.py",
+      "name": "run_webui.py",
+      "type": "file",
+      "tags": [
+        "webui",
+        "gradio",
+        "launcher",
+        "inference",
+        "interactive"
+      ],
+      "summary": "Gradio WebUI launcher for Fish Speech TTS. Loads LLaMA and decoder models, creates TTSInferenceEngine, performs warmup inference, and launches interactive web interface for voice synthesis with reference audio support.",
+      "filePath": "tools/run_webui.py",
+      "metadata": {
+        "lines": 108,
+        "primary_framework": "Gradio",
+        "entry_point": true,
+        "ui_type": "web"
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/api_client.py",
+      "name": "api_client.py",
+      "type": "file",
+      "tags": [
+        "client",
+        "cli",
+        "streaming",
+        "audio-playback",
+        "msgpack"
+      ],
+      "summary": "Command-line client for Fish Speech TTS API. Sends synthesis requests with text, reference audio/text, and generation parameters. Supports streaming and non-streaming modes, plays audio via PyAudio/Pydub, and saves output in multiple formats (wav/pcm/mp3/opus).",
+      "filePath": "tools/api_client.py",
+      "metadata": {
+        "lines": 240,
+        "supports_streaming": true,
+        "audio_formats": [
+          "wav",
+          "pcm",
+          "mp3",
+          "opus"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/models/text2semantic/llama.py",
+      "name": "llama.py",
+      "type": "file",
+      "tags": [
+        "transformer",
+        "dual-ar",
+        "attention",
+        "rope",
+        "kv-cache",
+        "lora",
+        "model-architecture"
+      ],
+      "summary": "Core transformer architecture for Fish Speech S2. Implements BaseTransformer, NaiveTransformer, and DualARTransformer with dual-autoregressive design. Includes model configuration classes, KV caching, RoPE embeddings, attention mechanisms, and pretrained model loading with LoRA support.",
+      "filePath": "fish_speech/models/text2semantic/llama.py",
+      "metadata": {
+        "lines": 1039,
+        "primary_framework": "PyTorch",
+        "key_classes": [
+          "BaseTransformer",
+          "NaiveTransformer",
+          "DualARTransformer",
+          "BaseModelArgs",
+          "DualARModelArgs",
+          "TransformerBlock",
+          "Attention"
+        ],
+        "supports_quantization": true,
+        "supports_compilation": true
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/models/text2semantic/lit_module.py",
+      "name": "lit_module.py",
+      "type": "file",
+      "tags": [
+        "lightning",
+        "training",
+        "loss",
+        "metrics",
+        "lora",
+        "optimizer"
+      ],
+      "summary": "PyTorch Lightning module for training text-to-semantic models. Implements TextToSemantic with cross-entropy loss for token and codebook predictions, top-5 accuracy metrics, LoRA checkpoint saving, and optimizer configuration with weight decay separation.",
+      "filePath": "fish_speech/models/text2semantic/lit_module.py",
+      "metadata": {
+        "lines": 211,
+        "primary_framework": "PyTorch Lightning",
+        "key_classes": [
+          "TextToSemantic"
+        ],
+        "training_module": true
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/inference_engine/__init__.py",
+      "name": "TTSInferenceEngine",
+      "type": "class",
+      "tags": [],
+      "summary": "Main TTS inference engine that orchestrates the text-to-speech pipeline. Inherits from ReferenceLoader and VQManager to handle reference audio loading and VQ token management. Coordinates between LLAMA model for semantic token generation and DAC decoder for audio synthesis.",
+      "filePath": "fish_speech/inference_engine/__init__.py",
+      "exports": [
+        "TTSInferenceEngine"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/server/model_manager.py",
+      "name": "ModelManager",
+      "type": "class",
+      "tags": [],
+      "summary": "Manages the lifecycle of TTS models including LLAMA and decoder models. Handles model loading, device selection (CUDA/MPS/CPU), precision configuration, and model warm-up. Creates and maintains the TTSInferenceEngine instance.",
+      "filePath": "tools/server/model_manager.py",
+      "exports": [
+        "ModelManager"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/server/model_utils.py",
+      "name": "model_utils",
+      "type": "module",
+      "tags": [],
+      "summary": "Utility functions for VQGAN encoding and decoding operations. Provides batch processing with caching for encoding audio to VQ tokens and decoding tokens back to audio. Includes micro-batching for large batch sizes.",
+      "filePath": "tools/server/model_utils.py",
+      "exports": [
+        "batch_encode",
+        "cached_vqgan_batch_encode",
+        "batch_vqgan_decode"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/server/inference.py",
+      "name": "inference_wrapper",
+      "type": "module",
+      "tags": [],
+      "summary": "Wrapper function that adapts the TTSInferenceEngine output for API server usage. Handles streaming audio generation, error propagation, and audio format conversion (float to int16).",
+      "filePath": "tools/server/inference.py",
+      "exports": [
+        "inference_wrapper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/server/views.py",
+      "name": "API Routes",
+      "type": "module",
+      "tags": [],
+      "summary": "Defines all HTTP API endpoints for the TTS server including TTS generation, VQGAN encode/decode, reference voice management (add/list/delete/update), health checks, and WebUI serving. Uses kui.asgi framework for routing.",
+      "filePath": "tools/server/views.py",
+      "exports": [
+        "routes",
+        "WebUI",
+        "Health",
+        "vqgan_encode",
+        "vqgan_decode",
+        "tts",
+        "add_reference",
+        "list_references",
+        "delete_reference",
+        "update_reference"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/datasets/semantic.py",
+      "name": "semantic.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Semantic dataset implementation for text-to-speech training. Provides AutoTextSemanticInstructionIterableDataset and AutoTextSemanticInstructionDataset for loading protobuf-based training data with text and semantic tokens. Includes InterleaveDataset for mixing multiple datasets, TextDataCollator for batching, and SemanticDataModule as Lightning data module. Handles speaker information, interactive/non-interactive modes, text cleaning, and VQ code packing.",
+      "filePath": "fish_speech/datasets/semantic.py",
+      "exports": [
+        "AutoTextSemanticInstructionIterableDataset",
+        "AutoTextSemanticInstructionDataset",
+        "InterleaveDataset",
+        "TextDataCollator",
+        "SemanticDataModule",
+        "CODEBOOK_PAD_TOKEN_ID",
+        "split_by_rank_worker"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/datasets/vqgan.py",
+      "name": "vqgan.py",
+      "type": "file",
+      "tags": [],
+      "summary": "VQGAN dataset implementation for audio codec training. Provides VQGANDataset for loading audio files from filelists, VQGANCollator for batching audio with padding, and VQGANDataModule as Lightning data module. Handles audio loading via librosa, optional slicing for training, normalization, and error handling.",
+      "filePath": "fish_speech/datasets/vqgan.py",
+      "exports": [
+        "VQGANDataset",
+        "VQGANCollator",
+        "VQGANDataModule"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/datasets/concat_repeat.py",
+      "name": "concat_repeat.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Dataset utility for concatenating multiple datasets with repetition. ConcatRepeatDataset allows combining datasets where each can be repeated a specified number of times, useful for balancing dataset sizes during training.",
+      "filePath": "fish_speech/datasets/concat_repeat.py",
+      "exports": [
+        "ConcatRepeatDataset"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/callbacks/grad_norm.py",
+      "name": "grad_norm.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Lightning callback for monitoring gradient norms during training. Provides grad_norm function for computing parameter gradient norms and GradNormMonitor callback for logging gradient norms to track training stability. Supports monitoring specific sub-modules and different norm types.",
+      "filePath": "fish_speech/callbacks/grad_norm.py",
+      "exports": [
+        "grad_norm",
+        "GradNormMonitor"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/callbacks/progress_bar.py",
+      "name": "progress_bar.py",
+      "type": "file",
+      "tags": [],
+      "summary": "Custom Lightning progress bar that accounts for gradient accumulation. GradAccumProgressBar extends TQDMProgressBar to show accurate progress when using gradient accumulation by multiplying total batches by accumulation steps.",
+      "filePath": "fish_speech/callbacks/progress_bar.py",
+      "exports": [
+        "GradAccumProgressBar"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/file.py",
+      "name": "file.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "file-io",
+        "audio",
+        "checkpoint",
+        "dataset-loading"
+      ],
+      "summary": "File system utilities for audio/video file handling, checkpoint management, and Bert-VITS2 filelist loading. Provides functions for listing files with extension filtering, reading reference text, converting audio to bytes, finding latest checkpoints, and parsing training filelists with speaker/language metadata.",
+      "filePath": "fish_speech/utils/file.py",
+      "metadata": {
+        "language": "python",
+        "framework": "pytorch",
+        "key_functions": [
+          "get_latest_checkpoint",
+          "audio_to_bytes",
+          "read_ref_text",
+          "list_files",
+          "load_filelist"
+        ],
+        "exports": [
+          "AUDIO_EXTENSIONS",
+          "VIDEO_EXTENSIONS",
+          "get_latest_checkpoint",
+          "audio_to_bytes",
+          "read_ref_text",
+          "list_files",
+          "load_filelist"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/context.py",
+      "name": "context.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "pytorch",
+        "mixed-precision",
+        "mps",
+        "context-manager"
+      ],
+      "summary": "PyTorch context manager utility that provides MPS-aware autocast functionality. Returns nullcontext for MPS devices (which don't support autocast) and torch.autocast for other device types, enabling cross-platform mixed precision training.",
+      "filePath": "fish_speech/utils/context.py",
+      "metadata": {
+        "language": "python",
+        "framework": "pytorch",
+        "key_functions": [
+          "autocast_exclude_mps"
+        ],
+        "exports": [
+          "autocast_exclude_mps"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/rich_utils.py",
+      "name": "rich_utils.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "logging",
+        "hydra",
+        "configuration",
+        "rich",
+        "cli"
+      ],
+      "summary": "Rich library utilities for pretty-printing Hydra configuration trees and enforcing experiment tags. Provides rank-zero-only functions for displaying hierarchical config structures with syntax highlighting and prompting users for tags in interactive mode.",
+      "filePath": "fish_speech/utils/rich_utils.py",
+      "metadata": {
+        "language": "python",
+        "framework": "lightning",
+        "key_functions": [
+          "print_config_tree",
+          "enforce_tags"
+        ],
+        "exports": [
+          "print_config_tree",
+          "enforce_tags"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/spectrogram.py",
+      "name": "spectrogram.py",
+      "type": "file",
+      "tags": [
+        "audio-processing",
+        "spectrogram",
+        "mel-spectrogram",
+        "feature-extraction",
+        "torchaudio"
+      ],
+      "summary": "Audio feature extraction modules implementing LinearSpectrogram and LogMelSpectrogram transforms. Provides STFT-based linear spectrograms and mel-scale spectrograms with logarithmic compression, supporting configurable FFT parameters, sample rate conversion, and reflection padding.",
+      "filePath": "fish_speech/utils/spectrogram.py",
+      "metadata": {
+        "language": "python",
+        "framework": "pytorch",
+        "key_classes": [
+          "LinearSpectrogram",
+          "LogMelSpectrogram"
+        ],
+        "exports": [
+          "LinearSpectrogram",
+          "LogMelSpectrogram"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/instantiators.py",
+      "name": "instantiators.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "hydra",
+        "lightning",
+        "factory",
+        "configuration"
+      ],
+      "summary": "Hydra-based factory functions for instantiating PyTorch Lightning callbacks and loggers from configuration. Iterates through DictConfig objects and uses hydra.utils.instantiate to create callback and logger instances based on _target_ specifications.",
+      "filePath": "fish_speech/utils/instantiators.py",
+      "metadata": {
+        "language": "python",
+        "framework": "lightning",
+        "key_functions": [
+          "instantiate_callbacks",
+          "instantiate_loggers"
+        ],
+        "exports": [
+          "instantiate_callbacks",
+          "instantiate_loggers"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/logger.py",
+      "name": "logger.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "logging",
+        "distributed",
+        "multi-gpu",
+        "lightning"
+      ],
+      "summary": "Multi-GPU-friendly logging adapter that prefixes log messages with process rank. Extends logging.LoggerAdapter to support rank-zero-only logging and rank-specific logging in distributed training environments, integrating with Lightning's rank utilities.",
+      "filePath": "fish_speech/utils/logger.py",
+      "metadata": {
+        "language": "python",
+        "framework": "lightning",
+        "key_classes": [
+          "RankedLogger"
+        ],
+        "exports": [
+          "RankedLogger"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "fish_speech/utils/utils.py",
+      "name": "utils.py",
+      "type": "file",
+      "tags": [
+        "utility",
+        "training",
+        "configuration",
+        "reproducibility",
+        "wandb",
+        "hydra"
+      ],
+      "summary": "General training utilities including configuration extras (warning suppression, tag enforcement, config printing), task wrapper decorator for exception handling and wandb cleanup, metric value retrieval, and deterministic seed setting for reproducibility across random, numpy, torch, and cudnn.",
+      "filePath": "fish_speech/utils/utils.py",
+      "metadata": {
+        "language": "python",
+        "framework": "lightning",
+        "key_functions": [
+          "extras",
+          "task_wrapper",
+          "get_metric_value",
+          "set_seed"
+        ],
+        "exports": [
+          "extras",
+          "task_wrapper",
+          "get_metric_value",
+          "set_seed"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/server/exception_handler.py",
+      "name": "exception_handler.py",
+      "type": "file",
+      "tags": [
+        "error-handling",
+        "http",
+        "api",
+        "middleware"
+      ],
+      "summary": "HTTP exception handler for API server. Provides ExceptionHandler class with methods to handle HTTPException and generic exceptions, formatting them as JSON responses with appropriate status codes and error messages.",
+      "filePath": "tools/server/exception_handler.py",
+      "metadata": {
+        "language": "Python",
+        "loc": 28,
+        "classes": [
+          "ExceptionHandler"
+        ],
+        "functions": [
+          "http_exception_handler",
+          "other_exception_handler"
+        ],
+        "imports": [
+          "traceback",
+          "http.HTTPStatus",
+          "kui.asgi"
+        ]
+      },
+      "complexity": "simple"
+    },
+    {
+      "id": "tools/server/api_utils.py",
+      "name": "api_utils.py",
+      "type": "file",
+      "tags": [
+        "api",
+        "server",
+        "utilities",
+        "serialization",
+        "http"
+      ],
+      "summary": "API server utilities for Fish Speech TTS. Provides argument parsing, custom MsgPackRequest handler supporting msgpack/json/multipart formats, async inference wrapper, content type detection, and response formatting helpers. Handles both JSON and msgpack serialization based on client Accept headers.",
+      "filePath": "tools/server/api_utils.py",
+      "metadata": {
+        "language": "Python",
+        "loc": 152,
+        "classes": [
+          "MsgPackRequest"
+        ],
+        "functions": [
+          "parse_args",
+          "inference_async",
+          "buffer_to_async_generator",
+          "get_content_type",
+          "wants_json",
+          "format_response"
+        ],
+        "imports": [
+          "argparse",
+          "ormsgpack",
+          "kui.asgi",
+          "pydantic",
+          "fish_speech.inference_engine",
+          "fish_speech.utils.schema",
+          "tools.server.inference"
+        ]
+      },
+      "complexity": "moderate"
+    },
+    {
+      "id": "tools/webui/variables.py",
+      "name": "variables.py",
+      "type": "file",
+      "tags": [
+        "webui",
+        "constants",
+        "i18n",
+        "ui"
+      ],
+      "summary": "WebUI text constants and variables. Defines internationalized header markdown content describing Fish Speech project, licensing, and links, plus textbox placeholder text. Uses i18n for multilingual support.",
+      "filePath": "tools/webui/variables.py",
+      "metadata": {
+        "language": "Python",
+        "loc": 15,
+        "constants": [
+          "HEADER_MD",
+          "TEXTBOX_PLACEHOLDER"
+        ],
+        "imports": [
+          "fish_speech.i18n"
+        ]
+      },
+      "complexity": "simple"
+    },
+    {
+      "id": "tools/webui/inference.py",
+      "name": "inference.py",
+      "type": "file",
+      "tags": [
+        "webui",
+        "inference",
+        "gradio",
+        "tts"
+      ],
+      "summary": "Gradio WebUI inference wrapper for Fish Speech TTS. Provides inference_wrapper function that processes text, reference audio, and generation parameters, calling the TTS engine and handling results. Includes helpers for reference audio loading, HTML error formatting, and partial function creation for Gradio integration.",
+      "filePath": "tools/webui/inference.py",
+      "metadata": {
+        "language": "Python",
+        "loc": 90,
+        "functions": [
+          "inference_wrapper",
+          "get_reference_audio",
+          "build_html_error_message",
+          "get_inference_wrapper"
+        ],
+        "imports": [
+          "functools",
+          "fish_speech.i18n",
+          "fish_speech.utils.schema"
+        ]
+      },
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/utils",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports utils module"
+    },
+    {
+      "source": "fish_speech/conversation.py",
+      "target": "fish_speech/content_sequence.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports AudioPart, BasePart, ContentSequence, EncodedMessage, TextPart, VQPart"
+    },
+    {
+      "source": "fish_speech/conversation.py",
+      "target": "fish_speech/tokenizer.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports IM_END_TOKEN, IM_START_TOKEN, MODALITY_TOKENS"
+    },
+    {
+      "source": "fish_speech/content_sequence.py",
+      "target": "fish_speech/tokenizer.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports IM_END_TOKEN, MODALITY_TOKENS, FishTokenizer"
+    },
+    {
+      "source": "fish_speech/conversation.py",
+      "target": "fish_speech/content_sequence.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "converts Message list to ContentSequence"
+    },
+    {
+      "source": "fish_speech/content_sequence.py",
+      "target": "fish_speech/tokenizer.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses FishTokenizer to encode parts into tokens"
+    },
+    {
+      "source": "tools/api_server.py",
+      "target": "tools/server/api_utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses MsgPackRequest, parse_args"
+    },
+    {
+      "source": "tools/api_server.py",
+      "target": "tools/server/exception_handler.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "extends ExceptionHandler"
+    },
+    {
+      "source": "tools/api_server.py",
+      "target": "tools/server/model_manager.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "initializes ModelManager"
+    },
+    {
+      "source": "tools/api_server.py",
+      "target": "tools/server/views.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "registers routes"
+    },
+    {
+      "source": "tools/run_webui.py",
+      "target": "fish_speech/inference_engine/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses TTSInferenceEngine"
+    },
+    {
+      "source": "tools/run_webui.py",
+      "target": "fish_speech/models/text2semantic/llama.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "loads model via launch_thread_safe_queue"
+    },
+    {
+      "source": "tools/run_webui.py",
+      "target": "tools/webui/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses get_inference_wrapper"
+    },
+    {
+      "source": "tools/api_client.py",
+      "target": "fish_speech/utils/file.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses audio_to_bytes, read_ref_text"
+    },
+    {
+      "source": "tools/api_client.py",
+      "target": "fish_speech/utils/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses ServeReferenceAudio, ServeTTSRequest"
+    },
+    {
+      "source": "fish_speech/models/text2semantic/lit_module.py",
+      "target": "fish_speech/models/text2semantic/llama.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "wraps NaiveTransformer for training"
+    },
+    {
+      "source": "fish_speech/models/text2semantic/lit_module.py",
+      "target": "fish_speech/utils/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses RankedLogger"
+    },
+    {
+      "source": "fish_speech/models/text2semantic/llama.py",
+      "target": "fish_speech/models/text2semantic/lora.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses LoraConfig, setup_lora"
+    },
+    {
+      "source": "fish_speech/models/text2semantic/llama.py",
+      "target": "fish_speech/tokenizer.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses FishTokenizer for semantic IDs"
+    },
+    {
+      "source": "tools/api_server.py",
+      "target": "tools/run_webui.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "parallel entry points (API vs WebUI)"
+    },
+    {
+      "source": "tools/api_client.py",
+      "target": "tools/api_server.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "sends requests to API server"
+    },
+    {
+      "source": "tools/server/views.py",
+      "target": "tools/server/model_manager.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "accesses ModelManager from app.state"
+    },
+    {
+      "source": "tools/server/views.py",
+      "target": "tools/server/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports inference_wrapper"
+    },
+    {
+      "source": "tools/server/views.py",
+      "target": "tools/server/model_utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports batch_vqgan_decode, cached_vqgan_batch_encode"
+    },
+    {
+      "source": "tools/server/views.py",
+      "target": "tools/server/api_utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports API utilities"
+    },
+    {
+      "source": "tools/server/views.py",
+      "target": "fish_speech/utils/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports request/response schemas"
+    },
+    {
+      "source": "tools/server/model_manager.py",
+      "target": "fish_speech/inference_engine/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports TTSInferenceEngine"
+    },
+    {
+      "source": "tools/server/model_manager.py",
+      "target": "fish_speech/models/dac/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports load_model as load_decoder_model"
+    },
+    {
+      "source": "tools/server/model_manager.py",
+      "target": "fish_speech/models/text2semantic/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports launch_thread_safe_queue"
+    },
+    {
+      "source": "tools/server/model_manager.py",
+      "target": "tools/server/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports inference_wrapper"
+    },
+    {
+      "source": "tools/server/inference.py",
+      "target": "fish_speech/inference_engine/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports TTSInferenceEngine"
+    },
+    {
+      "source": "tools/server/inference.py",
+      "target": "fish_speech/utils/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports ServeTTSRequest"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/inference_engine/reference_loader.py",
+      "type": "inherits",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "inherits ReferenceLoader"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/inference_engine/vq_manager.py",
+      "type": "inherits",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "inherits VQManager"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/inference_engine/utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports InferenceResult, wav_chunk_header"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/models/dac/modded_dac.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports DAC"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/models/text2semantic/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports GenerateRequest, GenerateResponse, WrappedGenerateResponse"
+    },
+    {
+      "source": "fish_speech/inference_engine/__init__.py",
+      "target": "fish_speech/utils/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports autocast_exclude_mps, set_seed"
+    },
+    {
+      "source": "tools/server/model_utils.py",
+      "target": "fish_speech/models/dac/modded_dac.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "operates on DAC model"
+    },
+    {
+      "source": "fish_speech/datasets/semantic.py",
+      "target": "fish_speech/content_sequence.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "ContentSequence, TextPart, VQPart"
+    },
+    {
+      "source": "fish_speech/datasets/semantic.py",
+      "target": "fish_speech/tokenizer.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "FishTokenizer"
+    },
+    {
+      "source": "fish_speech/datasets/semantic.py",
+      "target": "fish_speech/utils/logger.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "RankedLogger"
+    },
+    {
+      "source": "fish_speech/datasets/vqgan.py",
+      "target": "fish_speech/utils/logger.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "RankedLogger"
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/datasets/semantic.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "training data loading"
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/datasets/vqgan.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "VQGAN training data"
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/callbacks/grad_norm.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "gradient monitoring"
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/callbacks/progress_bar.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "progress tracking"
+    },
+    {
+      "source": "fish_speech/datasets/semantic.py",
+      "target": "fish_speech/datasets/concat_repeat.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "dataset composition"
+    },
+    {
+      "source": "fish_speech/utils/file.py",
+      "target": "loguru",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/file.py",
+      "target": "natsort",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/context.py",
+      "target": "torch",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/rich_utils.py",
+      "target": "rich",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/rich_utils.py",
+      "target": "hydra",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/rich_utils.py",
+      "target": "omegaconf",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/rich_utils.py",
+      "target": "fish_speech/utils/logger.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/rich_utils.py",
+      "target": "lightning.pytorch",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/spectrogram.py",
+      "target": "torch",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/spectrogram.py",
+      "target": "torchaudio",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/instantiators.py",
+      "target": "hydra",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/instantiators.py",
+      "target": "omegaconf",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/instantiators.py",
+      "target": "pytorch_lightning",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/instantiators.py",
+      "target": "fish_speech/utils/logger.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/logger.py",
+      "target": "logging",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/logger.py",
+      "target": "lightning_utilities",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "random",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "warnings",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "numpy",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "torch",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "omegaconf",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "fish_speech/utils/logger.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "fish_speech/utils/rich_utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/utils/utils.py",
+      "target": "wandb",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/utils/file.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/utils/instantiators.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/train.py",
+      "target": "fish_speech/utils/utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/datasets/vqgan.py",
+      "target": "fish_speech/utils/spectrogram.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "fish_speech/datasets/semantic.py",
+      "target": "fish_speech/utils/file.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "tools/webui/inference.py",
+      "target": "fish_speech/utils/file.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "tools/server/inference.py",
+      "target": "fish_speech/utils/file.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "tools/server/exception_handler.py",
+      "target": "kui.asgi",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses HTTPException, JSONResponse"
+    },
+    {
+      "source": "tools/server/api_utils.py",
+      "target": "fish_speech/inference_engine/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses TTSInferenceEngine"
+    },
+    {
+      "source": "tools/server/api_utils.py",
+      "target": "tools/server/inference.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "imports inference_wrapper"
+    },
+    {
+      "source": "tools/server/api_utils.py",
+      "target": "fish_speech.utils.schema",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses ServeTTSRequest"
+    },
+    {
+      "source": "tools/webui/variables.py",
+      "target": "fish_speech.i18n",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses i18n for translations"
+    },
+    {
+      "source": "tools/webui/inference.py",
+      "target": "fish_speech.i18n",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses i18n for translations"
+    },
+    {
+      "source": "tools/webui/inference.py",
+      "target": "fish_speech.utils.schema",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses ServeReferenceAudio, ServeTTSRequest"
+    },
+    {
+      "source": "tools/server/api_utils.py",
+      "target": "tools/server/exception_handler.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "uses exception handling"
+    },
+    {
+      "source": "tools/webui/inference.py",
+      "target": "tools/run_webui.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.7,
+      "label": "provides inference for Gradio UI"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:presentation",
+      "name": "Presentation Layer",
+      "description": "User-facing interfaces including REST API endpoints, WebUI, and CLI clients",
+      "nodeIds": [
+        "file:tools/api_server.py",
+        "file:tools/run_webui.py",
+        "file:tools/api_client.py",
+        "file:tools/server/views.py",
+        "file:tools/webui/inference.py",
+        "file:tools/webui/variables.py"
+      ]
+    },
+    {
+      "id": "layer:application",
+      "name": "Application Layer",
+      "description": "Business logic orchestration, model lifecycle management, and API adapters",
+      "nodeIds": [
+        "file:tools/server/model_manager.py",
+        "file:tools/server/inference.py",
+        "file:tools/server/api_utils.py",
+        "file:tools/server/exception_handler.py",
+        "file:fish_speech/inference_engine/__init__.py"
+      ]
+    },
+    {
+      "id": "layer:model",
+      "name": "Model Layer",
+      "description": "Core neural network architectures and training modules",
+      "nodeIds": [
+        "file:fish_speech/models/text2semantic/llama.py",
+        "file:fish_speech/models/text2semantic/lit_module.py",
+        "file:fish_speech/train.py"
+      ]
+    },
+    {
+      "id": "layer:data",
+      "name": "Data Layer",
+      "description": "Data structures, datasets, and data processing pipelines",
+      "nodeIds": [
+        "file:fish_speech/conversation.py",
+        "file:fish_speech/content_sequence.py",
+        "file:fish_speech/datasets/semantic.py",
+        "file:fish_speech/datasets/vqgan.py",
+        "file:fish_speech/datasets/concat_repeat.py"
+      ]
+    },
+    {
+      "id": "layer:processing",
+      "name": "Processing Layer",
+      "description": "Audio processing, encoding/decoding, and feature extraction utilities",
+      "nodeIds": [
+        "file:tools/server/model_utils.py",
+        "file:fish_speech/utils/spectrogram.py",
+        "file:fish_speech/tokenizer.py"
+      ]
+    },
+    {
+      "id": "layer:infrastructure",
+      "name": "Infrastructure Layer",
+      "description": "Training utilities, callbacks, schedulers, logging, and general utilities",
+      "nodeIds": [
+        "file:fish_speech/scheduler.py",
+        "file:fish_speech/callbacks/grad_norm.py",
+        "file:fish_speech/callbacks/progress_bar.py",
+        "file:fish_speech/utils/file.py",
+        "file:fish_speech/utils/context.py",
+        "file:fish_speech/utils/rich_utils.py",
+        "file:fish_speech/utils/instantiators.py",
+        "file:fish_speech/utils/logger.py",
+        "file:fish_speech/utils/utils.py"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Welcome to Fish Speech",
+      "description": "Fish Speech is a state-of-the-art multilingual text-to-speech system trained on 10M+ hours of audio across 80+ languages. The core innovation is the Dual-Autoregressive (Dual-AR) architecture that combines a slow transformer (4B parameters) for semantic tokens with a fast transformer (400M parameters) for acoustic details. This tour will guide you through the codebase from user-facing interfaces down to the core model architecture.",
+      "nodeIds": []
+    },
+    {
+      "order": 2,
+      "title": "Entry Points: How Users Interact",
+      "description": "Fish Speech provides three main entry points: (1) REST API Server for production deployments, (2) WebUI for interactive experimentation, and (3) CLI tools for batch processing. The API server (tools/api_server.py) uses the Kui framework to expose endpoints with optional authentication. It initializes a ModelManager on startup that loads both the LLAMA-based semantic model and the decoder model. The WebUI (tools/run_webui.py) provides a Gradio interface for non-technical users.",
+      "nodeIds": [
+        "file:tools/api_server.py",
+        "file:tools/run_webui.py"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Model Lifecycle: ModelManager",
+      "description": "The ModelManager (tools/server/model_manager.py) orchestrates the entire model lifecycle. It loads two critical components: (1) the LLAMA queue for semantic token generation, and (2) the decoder model (DAC) for converting VQ codes to audio waveforms. The manager handles device selection (CUDA/MPS/CPU), precision settings (half/bfloat16), and model compilation. It also performs a warm-up inference to ensure models are ready for production traffic.",
+      "nodeIds": [
+        "file:tools/server/model_manager.py"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Inference Engine: Orchestrating the Pipeline",
+      "description": "The TTSInferenceEngine (fish_speech/inference_engine/__init__.py) is the heart of the inference pipeline. It coordinates three major steps: (1) loading reference audio and text for voice cloning, (2) sending requests to the LLAMA model to generate semantic tokens, and (3) decoding VQ tokens to audio using the DAC decoder. The engine supports streaming mode where audio chunks are yielded as they're generated, enabling low-latency applications.",
+      "nodeIds": [
+        "file:fish_speech/inference_engine/__init__.py"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Conversation Structure: Messages and Multimodal Content",
+      "description": "Fish Speech uses a sophisticated conversation structure (fish_speech/conversation.py) that supports multimodal interactions. A Conversation contains Messages, each with a role (system/user/assistant) and a list of Parts (text, VQ codes, or audio features). The system supports inline emotion tags like [whisper], [excited], [angry] for fine-grained prosody control. Messages can specify modality (text/voice/interleave) and whether to calculate loss during training.",
+      "nodeIds": [
+        "file:fish_speech/conversation.py"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Content Sequence: Multimodal Representation",
+      "description": "ContentSequence (fish_speech/content_sequence.py) is the core multimodal data structure. It represents a sequence of BasePart objects: TextPart (text or token IDs), VQPart (vector-quantized audio codes), and AudioPart (raw audio features). The encode() method converts this high-level representation into tensors ready for the model, handling token shifting for next-token prediction, loss masking, and special token injection. This abstraction allows seamless mixing of text and audio in a single sequence.",
+      "nodeIds": [
+        "file:fish_speech/content_sequence.py"
+      ]
+    },
+    {
+      "order": 7,
+      "title": "Tokenizer: Bridging Text and Semantic Tokens",
+      "description": "The FishTokenizer (fish_speech/tokenizer.py) wraps a HuggingFace tokenizer and adds Fish-specific functionality. It manages special tokens including modality markers (<|text|>, <|voice|>, <|interleave|>), conversation markers (<|im_start|>, <|im_end|>), and 4096 semantic tokens (<|semantic:0|> through <|semantic:4095|>). The tokenizer maintains a mapping from semantic code indices to token IDs and computes the semantic token range (semantic_begin_id to semantic_end_id) used throughout the model.",
+      "nodeIds": [
+        "file:fish_speech/tokenizer.py"
+      ]
+    },
+    {
+      "order": 8,
+      "title": "Dual-AR Architecture: The Core Innovation",
+      "description": "The DualARTransformer (fish_speech/models/text2semantic/llama.py) implements the breakthrough Dual-Autoregressive architecture. It consists of two transformers: (1) BaseTransformer (slow AR, 4B params) operates along the time axis, predicting the first semantic codebook from text and previous audio context. (2) Fast transformer (400M params) generates the remaining 9 residual codebooks at each timestep, reconstructing acoustic details. This asymmetric design achieves high audio fidelity while maintaining fast inference (RTF 0.195 on H200).",
+      "nodeIds": [
+        "file:fish_speech/models/text2semantic/llama.py"
+      ]
+    },
+    {
+      "order": 9,
+      "title": "Embedding Strategy: Combining Text and Audio",
+      "description": "The embed() method in BaseTransformer demonstrates how Fish Speech combines text and audio representations. For each position, it sums the text embedding with embeddings from all codebooks (if the token is a semantic token). This allows the model to process interleaved text-audio sequences naturally. The semantic token range check ensures only valid audio tokens contribute to the embedding sum, while pure text tokens use only the text embedding.",
+      "nodeIds": [
+        "file:fish_speech/models/text2semantic/llama.py"
+      ]
+    },
+    {
+      "order": 10,
+      "title": "Training Pipeline: PyTorch Lightning Integration",
+      "description": "The training entry point (fish_speech/train.py) uses Hydra for configuration management and PyTorch Lightning for distributed training. It instantiates the datamodule, model (LightningModule), callbacks, and trainer from config files. The system supports automatic checkpoint resumption, gradient checkpointing for memory efficiency, and multi-GPU training via DDP. The modular design allows easy experimentation with different model architectures, datasets, and training strategies.",
+      "nodeIds": [
+        "file:fish_speech/train.py"
+      ]
+    },
+    {
+      "order": 11,
+      "title": "Dataset: Semantic Token Training Data",
+      "description": "The AutoTextSemanticInstructionIterableDataset (fish_speech/datasets/semantic.py) prepares training data for the Dual-AR model. It reads protocol buffer files containing text-audio pairs, automatically augments data by concatenating sentences from the same speaker, and supports both interactive (multi-turn conversation) and non-interactive (single sequence) modes. The dataset handles speaker information, applies text normalization, and can skip text with configurable probability for audio-only training.",
+      "nodeIds": [
+        "file:fish_speech/datasets/semantic.py"
+      ]
+    },
+    {
+      "order": 12,
+      "title": "Architecture Layers: Understanding the Stack",
+      "description": "The Fish Speech codebase is organized into six logical layers: (1) Presentation Layer - user interfaces (API, WebUI, CLI), (2) Application Layer - business logic and model management, (3) Model Layer - neural network architectures and training, (4) Data Layer - datasets and data structures, (5) Processing Layer - audio processing and tokenization, (6) Infrastructure Layer - utilities, callbacks, and logging. This separation enables independent development and testing of each component.",
+      "nodeIds": []
+    },
+    {
+      "order": 13,
+      "title": "Key Innovations Summary",
+      "description": "Fish Speech achieves state-of-the-art results through several innovations: (1) Dual-AR Architecture - asymmetric slow/fast transformers for semantic and acoustic modeling, (2) Reinforcement Learning Alignment - GRPO for multi-dimensional reward optimization, (3) Fine-grained Control - 15,000+ natural language emotion tags for prosody control, (4) Native Multi-speaker - single reference audio with multiple speakers via <|speaker:i|> tokens, (5) Extreme Streaming - SGLang integration with continuous batching and prefix caching for 3,000+ tokens/s throughput. The codebase demonstrates production-ready ML engineering with clean abstractions, comprehensive testing, and scalable deployment options.",
+      "nodeIds": [
+        "file:fish_speech/models/text2semantic/llama.py",
+        "file:fish_speech/inference_engine/__init__.py",
+        "file:fish_speech/conversation.py"
+      ]
+    }
+  ]
+}

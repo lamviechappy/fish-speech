@@ -18,36 +18,44 @@ class ModelManager:
         llama_checkpoint_path: str,
         decoder_checkpoint_path: str,
         decoder_config_name: str,
+        backend: str = "mlx",
     ) -> None:
 
         self.mode = mode
         self.device = device
         self.half = half
         self.compile = compile
+        self.backend = backend
 
         self.precision = torch.half if half else torch.bfloat16
 
-        # Check if MPS or CUDA is available
-        if torch.backends.mps.is_available():
-            self.device = "mps"
-            logger.info("mps is available, running on mps.")
-        elif not torch.cuda.is_available():
-            self.device = "cpu"
-            logger.info("CUDA is not available, running on CPU.")
+        # Initialize based on backend
+        if self.backend == "mlx":
+            logger.info("Using MLX backend for inference.")
+            self.load_mlx_engine(llama_checkpoint_path, compile)
+        else:
+            logger.info("Using PyTorch backend for inference.")
+            # Check if MPS or CUDA is available
+            if torch.backends.mps.is_available():
+                self.device = "mps"
+                logger.info("mps is available, running on mps.")
+            elif not torch.cuda.is_available():
+                self.device = "cpu"
+                logger.info("CUDA is not available, running on CPU.")
 
-        # Load the TTS models
-        self.load_llama_model(
-            llama_checkpoint_path, self.device, self.precision, self.compile, self.mode
-        )
-        self.load_decoder_model(
-            decoder_config_name, decoder_checkpoint_path, self.device
-        )
-        self.tts_inference_engine = TTSInferenceEngine(
-            llama_queue=self.llama_queue,
-            decoder_model=self.decoder_model,
-            precision=self.precision,
-            compile=self.compile,
-        )
+            # Load the TTS models
+            self.load_llama_model(
+                llama_checkpoint_path, self.device, self.precision, self.compile, self.mode
+            )
+            self.load_decoder_model(
+                decoder_config_name, decoder_checkpoint_path, self.device
+            )
+            self.tts_inference_engine = TTSInferenceEngine(
+                llama_queue=self.llama_queue,
+                decoder_model=self.decoder_model,
+                precision=self.precision,
+                compile=self.compile,
+            )
 
         # Warm up the models
         if self.mode == "tts":
@@ -76,6 +84,16 @@ class ModelManager:
             device=device,
         )
         logger.info("Decoder model loaded.")
+
+    def load_mlx_engine(self, checkpoint_path: str, compile: bool) -> None:
+        """Load the MLX inference engine."""
+        from fish_speech.inference_engine.mlx_engine import MLXTTSInferenceEngine
+
+        self.tts_inference_engine = MLXTTSInferenceEngine(
+            llama_checkpoint_path=checkpoint_path,
+            compile=compile,
+        )
+        logger.info("MLX inference engine loaded.")
 
     def warm_up(self, tts_inference_engine) -> None:
         request = ServeTTSRequest(

@@ -39,6 +39,13 @@ def parse_args():
     parser.add_argument("--listen", type=str, default="127.0.0.1:8080")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--api-key", type=str, default=None)
+    parser.add_argument(
+        "--backend",
+        type=str,
+        choices=["pytorch", "mlx"],
+        default="mlx",
+        help="Backend to use for inference (default: mlx)",
+    )
 
     return parser.parse_args()
 
