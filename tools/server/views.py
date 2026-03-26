@@ -14,6 +14,7 @@ import torch
 from kui.asgi import (
     Body,
     HTTPException,
+    HttpResponse,
     HttpView,
     JSONResponse,
     Routes,
@@ -29,6 +30,8 @@ from fish_speech.utils.schema import (
     AddReferenceResponse,
     DeleteReferenceResponse,
     ListReferencesResponse,
+    ListPresetsResponse,
+    ServeLongScriptRequest,
     ServeTTSRequest,
     ServeVQGANDecodeRequest,
     ServeVQGANDecodeResponse,
@@ -484,5 +487,116 @@ async def update_reference(
             message="Internal server error occurred",
             old_reference_id=old_reference_id if "old_reference_id" in locals() else "",
             new_reference_id=new_reference_id if "new_reference_id" in locals() else "",
+        )
+        return format_response(response, status_code=500)
+
+
+@routes.http.post("/v1/tts/long-script")
+async def tts_long_script(req: Annotated[ServeLongScriptRequest, Body(exclusive=True)]):
+    """
+    Generate audio for long scripts using block mode.
+
+    This endpoint splits text into sentence-aware chunks, processes them in blocks,
+    and saves intermediate results to prevent memory issues and overheating.
+
+    Args:
+        req: Long script TTS request with text, parameters, and optional preset
+
+    Returns:
+        Final audio file with all blocks concatenated
+    """
+    try:
+        logger.info(f"[ENDPOINT] Received long script request, text length: {len(req.text)}")
+
+        # Get the model manager
+        app_state = request.app.state
+        model_manager: ModelManager = app_state.model_manager
+        engine = model_manager.tts_inference_engine
+
+        logger.info(f"[ENDPOINT] Got engine: {type(engine)}")
+
+        # Apply preset if specified
+        if req.preset and req.preset != "custom":
+            from fish_speech.inference_engine.presets import apply_preset
+            req = apply_preset(req, req.preset)
+            logger.info(f"[ENDPOINT] Applied preset '{req.preset}': chunk_length={req.chunk_length}, block_size={req.block_size}, rest_interval={req.rest_interval}")
+
+        # Use simplified version
+        from fish_speech.inference_engine.long_script_simple import generate_long_script_simple
+
+        logger.info(f"[ENDPOINT] Using simplified long script generation")
+
+        # Generate with simplified version (run in thread pool to avoid blocking)
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        logger.info(f"[ENDPOINT] Running generate_long_script_simple in thread pool")
+
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            audio_data, sample_rate = await loop.run_in_executor(
+                executor,
+                generate_long_script_simple,
+                engine,
+                req.text,
+                req.chunk_length,
+                req.rest_interval,
+            )
+
+        logger.info(f"[ENDPOINT] Generation complete, audio shape: {audio_data.shape}, sample_rate: {sample_rate}")
+
+        # Convert to the requested format
+        output_buffer = io.BytesIO()
+        format_type = req.format
+        sf.write(output_buffer, audio_data, sample_rate, format=format_type)
+
+        logger.info(f"[ENDPOINT] Converted to {format_type} format")
+
+        # Return the audio file using StreamResponse like regular TTS
+        content_type = get_content_type(format_type)
+        logger.info(f"[ENDPOINT] Returning audio file")
+
+        return StreamResponse(
+            iterable=buffer_to_async_generator(output_buffer.getvalue()),
+            headers={
+                "Content-Disposition": f'attachment; filename="long_script_output.{format_type}"',
+            },
+            content_type=content_type,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in long script generation: {e}", exc_info=True)
+        raise HTTPException(
+            HTTPStatus.INTERNAL_SERVER_ERROR, content=f"Failed to generate long script: {str(e)}"
+        )
+
+
+@routes.http.get("/v1/tts/presets")
+async def list_presets():
+    """
+    Get a list of available presets for long script generation.
+
+    Returns:
+        List of preset configurations with descriptions
+    """
+    try:
+        from fish_speech.inference_engine.presets import list_presets as get_presets
+
+        presets = get_presets()
+        response = ListPresetsResponse(
+            success=True,
+            presets=presets,
+            message=f"Found {len(presets)} presets",
+        )
+        return format_response(response)
+
+    except Exception as e:
+        logger.error(f"Error listing presets: {e}", exc_info=True)
+        response = ListPresetsResponse(
+            success=False,
+            presets=[],
+            message="Internal server error occurred",
         )
         return format_response(response, status_code=500)

@@ -136,3 +136,40 @@ class UpdateReferenceResponse(BaseModel):
     message: str
     old_reference_id: str
     new_reference_id: str
+
+
+class LongScriptPreset(BaseModel):
+    """Preset configuration for long script generation."""
+    name: str
+    description: str
+    chunk_length: int
+    block_size: int
+    rest_interval: float
+
+
+class ServeLongScriptRequest(BaseModel):
+    """Request for long script generation with block mode."""
+    text: str
+    # Reference options
+    references: list[ServeReferenceAudio] = []
+    reference_id: str | None = None
+    # Generation parameters
+    max_new_tokens: int = 1024
+    top_p: Annotated[float, Field(ge=0.1, le=1.0, strict=True)] = 0.8
+    temperature: Annotated[float, Field(ge=0.1, le=1.0, strict=True)] = 0.8
+    # Block mode parameters
+    chunk_length: Annotated[int, conint(ge=100, le=1000, strict=True)] = 300
+    block_size: int = Field(default=5, ge=1, le=20)
+    rest_interval: float = Field(default=0.0, ge=0.0, le=60.0)
+    # Preset (overrides chunk_length, block_size, rest_interval if provided)
+    preset: Literal["short", "medium", "long", "very-long", "custom"] | None = None
+    # Output format
+    format: Literal["wav", "mp3", "flac"] = "wav"
+    streaming: bool = False  # Keep temp files if true
+
+
+class ListPresetsResponse(BaseModel):
+    """Response for listing available presets."""
+    success: bool
+    presets: list[LongScriptPreset]
+    message: str = "Success"
